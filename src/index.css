@@ -178,12 +178,14 @@ p.subtitle {
 /* Image */
 .idol-image {
   width: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.96);
   transition: all 0.3s;
 }
 
 .idol-grid .idol-image {
-  height: 140px;
+  height: 170px;
+  padding: 0.35rem;
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -196,6 +198,7 @@ p.subtitle {
 .idol-list .idol-image {
   width: 70px;
   height: 100%;
+  padding: 0.25rem;
   border-bottom: none;
   border-right: 1px solid var(--border-light);
 }
