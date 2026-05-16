@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="No idol icon yet">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="28" x2="208" y2="214" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff758c"/>
+      <stop offset="0.52" stop-color="#4facfe"/>
+      <stop offset="1" stop-color="#f6d365"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="58" y1="54" x2="182" y2="196" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.68"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="36" fill="#10172a"/>
+  <circle cx="120" cy="120" r="86" fill="url(#bg)" opacity="0.92"/>
+  <circle cx="120" cy="92" r="36" fill="url(#shine)"/>
+  <path d="M58 185c11-34 34-53 62-53s51 19 62 53c-16 15-37 24-62 24s-46-9-62-24Z" fill="url(#shine)"/>
+  <path d="M191 55l7 18 19 2-15 12 5 19-16-10-16 10 5-19-15-12 19-2 7-18Z" fill="#fff7ad"/>
+  <path d="M48 69l4 11 12 1-9 8 3 12-10-7-10 7 3-12-9-8 12-1 4-11Z" fill="#ffffff" opacity="0.82"/>
+</svg>
