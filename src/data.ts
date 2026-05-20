@@ -28,6 +28,8 @@ export interface Idol {
   image: string;
 }
 
+const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
+
 const placeholderImage = '/member_placeholder.svg';
 
 const memberImages: Record<string, string> = {
@@ -259,7 +261,7 @@ const buildIdols = (
   vocal: 50,
   dance: 50,
   visual: 50,
-  image: memberImages[name] ?? placeholderImage,
+  image: assetUrl(memberImages[name] ?? placeholderImage),
 }));
 
 export const idolGroups: { project: IdolProject; idols: Idol[] }[] = [

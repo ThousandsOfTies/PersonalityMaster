@@ -111,7 +111,7 @@ function App() {
     setActiveFilters(current => current.length === idolFilters.length ? [] : idolFilters);
   }
 
-  const apiBaseUrl = import.meta.env.VITE_API_URL ?? '/api';
+  const apiBaseUrl = import.meta.env.VITE_API_URL ?? '';
 
   const handleAnalyze = async () => {
     if (selectedIds.length === 0) return;
