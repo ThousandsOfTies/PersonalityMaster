@@ -1,20 +1,35 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import './index.css'
-import { idolGroups, idols } from './data'
+import { idolFilters, idolGroups, idols, type IdolFilter } from './data'
 
 function App() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [analyzed, setAnalyzed] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState('gemini-3.1-flash-lite');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
+  const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('tile');
+  const [activeFilters, setActiveFilters] = useState<IdolFilter[]>([]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
+  const dragStartRef = useRef<{ id: string; x: number; y: number } | null>(null);
+  const isDraggingRef = useRef(false);
+  const selectedPoolRef = useRef<HTMLDivElement | null>(null);
   
   const [aiAnalysis, setAiAnalysis] = useState<{
     analysis: string;
     recommendation_name: string;
     recommendation_reason: string;
   } | null>(null);
+
+  const modelOptions = [
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', detail: '高速・安定版' },
+    { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite', detail: '軽量・低コスト' },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', detail: '高精度・深い分析' },
+  ];
+
+  const selectedModelOption = modelOptions.find(model => model.value === selectedModel) ?? modelOptions[0];
 
   const toggleSelect = (id: string) => {
     if (selectedIds.includes(id)) {
@@ -24,26 +39,108 @@ function App() {
     }
   }
 
+  const addSelect = (id: string) => {
+    setSelectedIds(current => current.includes(id) ? current : [...current, id]);
+  }
+
+  const removeSelect = (id: string) => {
+    setSelectedIds(current => current.filter(x => x !== id));
+  }
+
+  const handlePointerDown = (id: string, event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    dragStartRef.current = { id, x: event.clientX, y: event.clientY };
+    isDraggingRef.current = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const start = dragStartRef.current;
+    if (!start) return;
+
+    const distance = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+    if (distance > 8) {
+      isDraggingRef.current = true;
+      setDraggingId(start.id);
+      setDragPosition({ x: event.clientX, y: event.clientY });
+    }
+  }
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const start = dragStartRef.current;
+    if (!start) return;
+
+    const poolRect = selectedPoolRef.current?.getBoundingClientRect();
+    const droppedInPool = Boolean(
+      isDraggingRef.current &&
+      poolRect &&
+      event.clientX >= poolRect.left &&
+      event.clientX <= poolRect.right &&
+      event.clientY >= poolRect.top &&
+      event.clientY <= poolRect.bottom
+    );
+
+    if (droppedInPool) {
+      addSelect(start.id);
+    } else if (!isDraggingRef.current) {
+      toggleSelect(start.id);
+    }
+
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+    setDraggingId(null);
+    setDragPosition(null);
+  }
+
+  const handlePointerCancel = () => {
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+    setDraggingId(null);
+    setDragPosition(null);
+  }
+
+  const toggleFilter = (filter: IdolFilter) => {
+    setActiveFilters(current => (
+      current.includes(filter)
+        ? current.filter(item => item !== filter)
+        : [...current, filter]
+    ));
+  }
+
+  const enableAllFilters = () => {
+    setActiveFilters(current => current.length === idolFilters.length ? [] : idolFilters);
+  }
+
+  const apiBaseUrl = import.meta.env.VITE_API_URL ?? '/api';
+
   const handleAnalyze = async () => {
     if (selectedIds.length === 0) return;
-    
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      setErrorMsg("VITE_GEMINI_API_KEY が .env.local に設定されていません。GeminiのAPIキーを入力してください。");
+    if (!apiBaseUrl) {
+      setErrorMsg('API サーバーの URL が設定されていません。VITE_API_URL を確認してください。');
       return;
     }
 
     // 名前から (C) などの記号を削除してAIに渡す
     const selectedNames = idols.filter(i => selectedIds.includes(i.id)).map(i => i.name.replace(/ \(.+\)/, ''));
+    const recommendationCandidates = idols
+      .filter(i => !selectedIds.includes(i.id))
+      .map(i => i.name.replace(/ \(.+\)/, ''));
     
     setIsAnalyzing(true);
     setErrorMsg(null);
     
     try {
       const prompt = `ユーザーはアイドルマスターの以下のキャラクターが好きです：${selectedNames.join(', ')}。
+これはキャラクター紹介ではなく、ユーザーの好みを推定する診断です。
+選択キャラクターが1人だけの場合も、そのキャラクターの説明に終始せず、ユーザーが惹かれた可能性のある性格・雰囲気・外見・関係性の好みを抽出してください。
+「${selectedNames.join('、')}は〜です」のような紹介文ではなく、「あなたは〜に惹かれやすい」「〜なタイプを好む傾向がある」のようにユーザーの嗜好として書いてください。
+おすすめ候補は必ず次の候補リスト内のキャラクターから1名だけ選んでください。
+候補リストにないキャラクター名は絶対に出力しないでください。
+候補リスト：${recommendationCandidates.join(', ')}
+
 この情報をもとに、以下の3点を出力してください。
-1. ユーザーが好むキャラクターの性格や外見の傾向の深い分析（3〜4文の日本語）
-2. リストにはない、他のおすすめのアイドルマスターのキャラクター1名（フルネーム）
+1. ユーザーが好むキャラクターの性格や外見の傾向の深い分析（3〜4文の日本語、キャラクター紹介は禁止）
+2. 候補リスト内からおすすめのキャラクター1名（候補リストと完全一致する名前）
 3. そのキャラクターをおすすめする理由（2〜3文の日本語）
 
 必ず以下のJSONフォーマットのみで出力してください。Markdownのバッククォートなどは含めず、純粋なJSON文字列だけにしてください。
@@ -53,23 +150,22 @@ function App() {
   "recommendation_reason": "おすすめ理由"
 }`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
+      const response = await fetch(`${apiBaseUrl}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-          }
-        })
+          prompt,
+          model: selectedModel,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error("APIリクエストに失敗しました");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'APIリクエストに失敗しました');
       }
 
       const data = await response.json();
-      const text = data.candidates[0].content.parts[0].text;
+      const text = data.text;
       const result = JSON.parse(text);
       
       setAiAnalysis(result);
@@ -82,30 +178,143 @@ function App() {
     }
   };
 
+  const filteredGroups = idolGroups
+    .map(group => ({
+      ...group,
+      idols: activeFilters.length === 0
+        ? group.idols
+        : group.idols.filter(idol => activeFilters.includes(idol.filter)),
+    }))
+    .filter(group => group.idols.length > 0);
+
+  const selectedIdols = idols.filter(idol => selectedIds.includes(idol.id));
+  const draggingIdol = idols.find(idol => idol.id === draggingId);
+  const allFiltersEnabled = activeFilters.length === idolFilters.length;
+  const recommendedIdol = aiAnalysis?.recommendation_name
+    ? idols.find(idol => aiAnalysis.recommendation_name.includes(idol.name) || idol.name.includes(aiAnalysis.recommendation_name))
+    : undefined;
+  const recommendationReason = aiAnalysis?.recommendation_reason ?? '';
+  const recommendationReasonBody = recommendationReason.endsWith('。')
+    ? recommendationReason.slice(0, -1)
+    : recommendationReason;
+  const youtubeSearchName = recommendedIdol?.name ?? aiAnalysis?.recommendation_name ?? '';
+  const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${youtubeSearchName} アイドルマスター`)}`;
+
   return (
     <div className="app-container">
-      <header>
-        <h1>PersonalityM@ster</h1>
-        <p className="subtitle">Select your favorite idols and let AI discover your preferences!</p>
-      </header>
+      <div className="top-panel">
+        <header>
+          <div className="title-row">
+            <h1>PersonalityM@ster</h1>
+            <div className="view-toggle">
+              <button 
+                className={`view-btn ${viewMode === 'tile' ? 'active' : ''}`} 
+                onClick={() => setViewMode('tile')}
+              >
+                ▦ Tile
+              </button>
+              <button 
+                className={`view-btn ${viewMode === 'list' ? 'active' : ''}`} 
+                onClick={() => setViewMode('list')}
+              >
+                ☰ List
+              </button>
+            </div>
+          </div>
+          <p className="subtitle">Select your favorite idols and let AI discover your preferences!</p>
+        </header>
 
-      <div className="view-toggle">
-        <button 
-          className={`view-btn ${viewMode === 'tile' ? 'active' : ''}`} 
-          onClick={() => setViewMode('tile')}
-        >
-          ▦ Tile
-        </button>
-        <button 
-          className={`view-btn ${viewMode === 'list' ? 'active' : ''}`} 
-          onClick={() => setViewMode('list')}
-        >
-          ☰ List
-        </button>
+        <div className="type-tabs" aria-label="Filter by idol type">
+          <button
+            className={`type-tab all-filter ${allFiltersEnabled ? 'active' : ''}`}
+            onClick={enableAllFilters}
+          >
+            ALL
+          </button>
+          {idolFilters.map(filter => (
+            <button
+              key={filter}
+              className={`type-tab ${activeFilters.includes(filter) ? 'active' : ''}`}
+              onClick={() => toggleFilter(filter)}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+
+        <div className={`selected-pool ${selectedIds.length > 0 ? 'has-items' : ''} ${draggingId ? 'drag-target' : ''}`} ref={selectedPoolRef}>
+          <div className="pool-items">
+            {selectedIdols.length === 0 ? (
+              <span className="pool-empty">Drag idols here or tap a card</span>
+            ) : (
+              selectedIdols.map(idol => (
+                <div className="pool-idol" key={idol.id}>
+                  <img src={idol.image} alt="" />
+                  <span>{idol.name}</span>
+                  <button
+                    className="pool-remove"
+                    type="button"
+                    aria-label={`${idol.name}を削除`}
+                    onClick={() => removeSelect(idol.id)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {errorMsg && <div style={{color: '#ff758c', textAlign: 'center', marginBottom: '1rem', fontWeight: 'bold'}}>{errorMsg}</div>}
+
+        {!analyzed && (
+          <div className="analyze-panel">
+            <div className="analyze-combo">
+              <button 
+                className="analyze-btn combo-main" 
+                onClick={handleAnalyze}
+                disabled={selectedIds.length === 0 || isAnalyzing}
+              >
+                {isAnalyzing
+                  ? 'AI is Analyzing...'
+                  : selectedIds.length === 0
+                    ? 'Select at least 1 idol'
+                    : `${selectedModelOption.label}で診断`}
+              </button>
+              <button
+                className="combo-menu-btn"
+                type="button"
+                aria-label="モデルを選択"
+                aria-expanded={isModelMenuOpen}
+                onClick={() => setIsModelMenuOpen(open => !open)}
+              >
+                ▼
+              </button>
+              {isModelMenuOpen && (
+                <div className="model-menu">
+                  {modelOptions.map(model => (
+                    <button
+                      key={model.value}
+                      className={`model-menu-item ${selectedModel === model.value ? 'active' : ''}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedModel(model.value);
+                        setIsModelMenuOpen(false);
+                      }}
+                    >
+                      <span>{model.label}</span>
+                      <small>{model.detail}</small>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="idol-sections">
-        {idolGroups.map(group => (
+        {filteredGroups.map(group => (
           <section className="idol-section" key={group.project}>
             <div className="section-header">
               <h2>{group.project}</h2>
@@ -116,12 +325,15 @@ function App() {
                 <div 
                   key={idol.id} 
                   className={`idol-card ${selectedIds.includes(idol.id) ? 'selected' : ''}`}
-                  onClick={() => toggleSelect(idol.id)}
+                  onPointerDown={(event) => handlePointerDown(idol.id, event)}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerCancel}
                 >
-                  <img src={idol.image} alt={idol.name} className="idol-image" />
+                  <img src={idol.image} alt={idol.name} className="idol-image" draggable={false} />
                   <div className="idol-info">
                     <div className="idol-name">{idol.name}</div>
-                    <div className={`idol-type type-${idol.type}`}>{idol.type}</div>
+                    <div className="idol-type">{idol.filter}</div>
                   </div>
                 </div>
               ))}
@@ -130,63 +342,78 @@ function App() {
         ))}
       </div>
 
-      {errorMsg && <div style={{color: '#ff758c', textAlign: 'center', marginBottom: '1rem', fontWeight: 'bold'}}>{errorMsg}</div>}
-
-      {!analyzed ? (
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ marginRight: '0.5rem', color: 'var(--text-muted)' }}>AI Model:</label>
-            <select 
-              value={selectedModel} 
-              onChange={(e) => setSelectedModel(e.target.value)}
-              style={{ 
-                padding: '0.5rem 1rem', 
-                borderRadius: '8px', 
-                background: 'var(--bg-card)', 
-                color: 'white', 
-                border: '1px solid var(--border-light)',
-                outline: 'none',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: '1rem'
-              }}
+      {analyzed && (
+        <div className="results-overlay" role="dialog" aria-modal="true" aria-labelledby="result-title">
+          <div className="results-section">
+            <button
+              className="result-close"
+              type="button"
+              aria-label="診断結果を閉じる"
+              onClick={() => setAnalyzed(false)}
             >
-              <option value="gemini-3.1-pro" style={{background: '#0f172a'}}>✨ Gemini 3.1 Pro (最高精度・深い分析)</option>
-              <option value="gemini-3.1-flash-lite" style={{background: '#0f172a'}}>⚡ Gemini 3.1 Flash-Lite (高速・一般提供最新)</option>
-              <option value="gemini-2.5-flash" style={{background: '#0f172a'}}>⚖️ Gemini 2.5 Flash (安定版)</option>
-            </select>
+              ×
+            </button>
+            <h2 id="result-title" style={{background: 'var(--cute-grad)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '1rem'}}>
+              AI Preference Analysis
+            </h2>
+            
+            <div style={{background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem', lineHeight: '1.6'}}>
+              <p>{aiAnalysis?.analysis}</p>
+            </div>
+            
+            <h3 style={{color: 'var(--passion-color)', marginBottom: '1rem'}}>AI Recommendation</h3>
+            <div className="recommendation-panel">
+              <div className="recommendation-profile">
+                {recommendedIdol ? (
+                  <div className="recommend-image-panel">
+                    <img src={recommendedIdol.image} alt={recommendedIdol.name} />
+                  </div>
+                ) : (
+                  <div className="recommend-image-panel fallback">
+                    <span>No Image</span>
+                  </div>
+                )}
+                <h4>{aiAnalysis?.recommendation_name}</h4>
+              </div>
+              <div className="recommendation-copy">
+                <p>
+                  {recommendationReasonBody}
+                  {youtubeSearchName && (
+                    <a
+                      className="youtube-search-link"
+                      href={youtubeSearchUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`${youtubeSearchName}をYouTubeで検索`}
+                    >
+                      <span className="youtube-icon" aria-hidden="true" />
+                    </a>
+                  )}
+                </p>
+              </div>
+            </div>
+            
+            <div className="result-actions">
+              <button 
+                className="analyze-btn" 
+                onClick={() => {setAnalyzed(false); setSelectedIds([]); setAiAnalysis(null);}}
+              >
+                Start Over
+              </button>
+            </div>
           </div>
-          <button 
-            className="analyze-btn" 
-            onClick={handleAnalyze}
-            disabled={selectedIds.length === 0 || isAnalyzing}
-          >
-            {isAnalyzing ? 'AI is Analyzing...' : selectedIds.length === 0 ? 'Select at least 1 idol' : 'Analyze Preferences'}
-          </button>
         </div>
-      ) : (
-        <div className="results-section">
-          <h2 style={{background: 'var(--cute-grad)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '1rem'}}>
-            AI Preference Analysis
-          </h2>
-          
-          <div style={{background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem', lineHeight: '1.6'}}>
-            <p>{aiAnalysis?.analysis}</p>
-          </div>
-          
-          <h3 style={{color: 'var(--passion-color)', marginBottom: '1rem'}}>AI Recommendation</h3>
-          <div style={{background: 'linear-gradient(to right, rgba(246, 211, 101, 0.1), rgba(253, 160, 133, 0.1))', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(246, 211, 101, 0.3)'}}>
-            <h4 style={{fontSize: '1.5rem', marginBottom: '0.5rem'}}>{aiAnalysis?.recommendation_name}</h4>
-            <p style={{lineHeight: '1.6'}}>{aiAnalysis?.recommendation_reason}</p>
-          </div>
-          
-          <button 
-            className="analyze-btn" 
-            style={{marginTop: '2.5rem'}}
-            onClick={() => {setAnalyzed(false); setSelectedIds([]); setAiAnalysis(null);}}
-          >
-            Start Over
-          </button>
+      )}
+
+      {draggingIdol && dragPosition && (
+        <div
+          className="drag-ghost"
+          style={{
+            left: dragPosition.x,
+            top: dragPosition.y,
+          }}
+        >
+          <img src={draggingIdol.image} alt="" />
         </div>
       )}
     </div>

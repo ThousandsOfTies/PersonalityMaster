@@ -2,10 +2,37 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+## Backend API server
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+This project now includes a backend proxy server in `server/index.js` for Cloud Run.
+
+- The frontend calls `VITE_API_URL` or local `/api` instead of sending a Gemini API key from the browser.
+- The backend reads `GEMINI_API_KEY` from environment variables and forwards AI requests to Gemini.
+- Run locally with `npm run dev:server` and `npm run dev`.
+
+Currently, the backend supports:
+
+- `GET /api/health`
+- `POST /api/generate` with `{ prompt, model }`
+
+## Cloud Run deployment
+
+1. Create a secret in Secret Manager:
+
+```powershell
+$projectId = "YOUR_PROJECT_ID"
+echo -n "YOUR_GEMINI_API_KEY" | gcloud secrets create GEMINI_API_KEY --data-file=- --project $projectId
+```
+
+2. Build and deploy the container:
+
+```powershell
+gcloud config set project YOUR_PROJECT_ID
+gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/personalitymaster-api
+gcloud run deploy personalitymaster-api --image gcr.io/YOUR_PROJECT_ID/personalitymaster-api --region asia-northeast1 --platform managed --allow-unauthenticated --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest"
+```
+
+3. After deployment, set `VITE_API_URL` to `https://YOUR_SERVICE_URL/api` when building the frontend.
 
 ## React Compiler
 

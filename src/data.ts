@@ -1,11 +1,25 @@
 export type IdolType = 'Cute' | 'Cool' | 'Passion';
 export type IdolProject = 'ミリシタ' | 'シャニソン';
+export type IdolFilter =
+  | '765AS'
+  | 'Princess'
+  | 'Fairy'
+  | 'Angel'
+  | 'illumination STARS'
+  | "L'Antica"
+  | '放課後クライマックスガールズ'
+  | 'ALSTROEMERIA'
+  | 'ストレイライト'
+  | 'ノクチル'
+  | 'SHHis'
+  | 'CoMETIK';
 
 export interface Idol {
   id: string;
   name: string;
   project: IdolProject;
   type: IdolType;
+  filter: IdolFilter;
   age: number;
   height: number;
   vocal: number;
@@ -187,6 +201,49 @@ const shinyColorsNames = [
 
 const typeCycle: IdolType[] = ['Cute', 'Cool', 'Passion'];
 
+const allStars = new Set<string>([
+  '天海春香',
+  '我那覇響',
+  '菊地真',
+  '萩原雪歩',
+  '秋月律子',
+  '如月千早',
+  '四条貴音',
+  '水瀬伊織',
+  '高槻やよい',
+  '双海亜美',
+  '双海真美',
+  '星井美希',
+  '三浦あずさ',
+]);
+
+const princess = new Set<string>(millionLiveNames.slice(0, 17));
+const fairy = new Set<string>(millionLiveNames.slice(17, 34));
+const angel = new Set<string>(millionLiveNames.slice(34));
+
+const shinyUnitByName = new Map<string, IdolFilter>([
+  ...shinyColorsNames.slice(0, 3).map(name => [name, 'illumination STARS'] as const),
+  ...shinyColorsNames.slice(3, 8).map(name => [name, "L'Antica"] as const),
+  ...shinyColorsNames.slice(8, 13).map(name => [name, '放課後クライマックスガールズ'] as const),
+  ...shinyColorsNames.slice(13, 16).map(name => [name, 'ALSTROEMERIA'] as const),
+  ...shinyColorsNames.slice(16, 19).map(name => [name, 'ストレイライト'] as const),
+  ...shinyColorsNames.slice(19, 23).map(name => [name, 'ノクチル'] as const),
+  ...shinyColorsNames.slice(23, 25).map(name => [name, 'SHHis'] as const),
+  ...shinyColorsNames.slice(25).map(name => [name, 'CoMETIK'] as const),
+]);
+
+const getIdolFilter = (name: string, project: IdolProject): IdolFilter => {
+  if (project === 'シャニソン') {
+    return shinyUnitByName.get(name) ?? 'illumination STARS';
+  }
+
+  if (allStars.has(name)) return '765AS';
+  if (princess.has(name)) return 'Princess';
+  if (fairy.has(name)) return 'Fairy';
+  if (angel.has(name)) return 'Angel';
+  return 'Princess';
+};
+
 const buildIdols = (
   names: readonly string[],
   project: IdolProject,
@@ -196,6 +253,7 @@ const buildIdols = (
   name,
   project,
   type: typeCycle[index % typeCycle.length],
+  filter: getIdolFilter(name, project),
   age: 0,
   height: 0,
   vocal: 50,
@@ -216,3 +274,18 @@ export const idolGroups: { project: IdolProject; idols: Idol[] }[] = [
 ];
 
 export const idols: Idol[] = idolGroups.flatMap((group) => group.idols);
+
+export const idolFilters: IdolFilter[] = [
+  '765AS',
+  'Princess',
+  'Fairy',
+  'Angel',
+  'illumination STARS',
+  "L'Antica",
+  '放課後クライマックスガールズ',
+  'ALSTROEMERIA',
+  'ストレイライト',
+  'ノクチル',
+  'SHHis',
+  'CoMETIK',
+];
