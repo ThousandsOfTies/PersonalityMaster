@@ -49,6 +49,9 @@ function App() {
 
   const handlePointerDown = (id: string, event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
+    if (event.pointerType === 'touch') {
+      event.preventDefault();
+    }
     dragStartRef.current = { id, x: event.clientX, y: event.clientY };
     isDraggingRef.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -60,6 +63,7 @@ function App() {
 
     const distance = Math.hypot(event.clientX - start.x, event.clientY - start.y);
     if (distance > 8) {
+      event.preventDefault();
       isDraggingRef.current = true;
       setDraggingId(start.id);
       setDragPosition({ x: event.clientX, y: event.clientY });

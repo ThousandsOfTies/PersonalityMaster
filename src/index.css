@@ -26,6 +26,7 @@ body {
   background-color: var(--bg-dark);
   color: var(--text-main);
   min-height: 100vh;
+  overflow-x: hidden;
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(255, 117, 140, 0.08), transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(79, 172, 254, 0.08), transparent 25%);
@@ -284,7 +285,7 @@ p.subtitle {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  touch-action: pan-x pan-y;
+  touch-action: none;
   user-select: none;
 }
 
@@ -722,7 +723,10 @@ p.subtitle {
 @media (max-width: 640px) {
   .app-container {
     height: 100dvh;
+    width: 100%;
+    max-width: 100%;
     padding: 1rem 0 0;
+    overflow-x: hidden;
   }
 
   header {
@@ -735,7 +739,10 @@ p.subtitle {
   }
 
   h1 {
-    font-size: 2.2rem;
+    max-width: 100%;
+    font-size: clamp(2rem, 10vw, 2.6rem);
+    line-height: 1.02;
+    overflow-wrap: anywhere;
   }
 
   p.subtitle {
@@ -868,7 +875,7 @@ p.subtitle {
   }
 
   .idol-section {
-    overflow: hidden;
+    overflow: visible;
   }
 
   .section-header {
@@ -880,26 +887,21 @@ p.subtitle {
   }
 
   .idol-grid {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.65rem;
-    overflow-x: auto;
+    overflow: visible;
     padding: 0 1rem 0.4rem;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .idol-grid::-webkit-scrollbar {
-    display: none;
   }
 
   .idol-grid .idol-card {
-    flex: 0 0 calc((100vw - 3.3rem) / 3);
-    scroll-snap-align: start;
+    min-width: 0;
     border-radius: 10px;
   }
 
   .idol-grid .idol-image {
-    height: 150px;
+    aspect-ratio: 1 / 1;
+    height: auto;
     padding: 0.2rem;
   }
 
