@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import './index.css'
 import { idolFilters, idolGroups, idols, type IdolFilter } from './data'
 
@@ -11,11 +11,6 @@ function App() {
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('tile');
   const [activeFilters, setActiveFilters] = useState<IdolFilter[]>([]);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
-  const dragStartRef = useRef<{ id: string; x: number; y: number } | null>(null);
-  const isDraggingRef = useRef(false);
-  const selectedPoolRef = useRef<HTMLDivElement | null>(null);
   
   const [aiAnalysis, setAiAnalysis] = useState<{
     analysis: string;
@@ -39,68 +34,8 @@ function App() {
     }
   }
 
-  const addSelect = (id: string) => {
-    setSelectedIds(current => current.includes(id) ? current : [...current, id]);
-  }
-
   const removeSelect = (id: string) => {
     setSelectedIds(current => current.filter(x => x !== id));
-  }
-
-  const handlePointerDown = (id: string, event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return;
-    if (event.pointerType === 'touch') {
-      event.preventDefault();
-    }
-    dragStartRef.current = { id, x: event.clientX, y: event.clientY };
-    isDraggingRef.current = false;
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const start = dragStartRef.current;
-    if (!start) return;
-
-    const distance = Math.hypot(event.clientX - start.x, event.clientY - start.y);
-    if (distance > 8) {
-      event.preventDefault();
-      isDraggingRef.current = true;
-      setDraggingId(start.id);
-      setDragPosition({ x: event.clientX, y: event.clientY });
-    }
-  }
-
-  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    const start = dragStartRef.current;
-    if (!start) return;
-
-    const poolRect = selectedPoolRef.current?.getBoundingClientRect();
-    const droppedInPool = Boolean(
-      isDraggingRef.current &&
-      poolRect &&
-      event.clientX >= poolRect.left &&
-      event.clientX <= poolRect.right &&
-      event.clientY >= poolRect.top &&
-      event.clientY <= poolRect.bottom
-    );
-
-    if (droppedInPool) {
-      addSelect(start.id);
-    } else if (!isDraggingRef.current) {
-      toggleSelect(start.id);
-    }
-
-    dragStartRef.current = null;
-    isDraggingRef.current = false;
-    setDraggingId(null);
-    setDragPosition(null);
-  }
-
-  const handlePointerCancel = () => {
-    dragStartRef.current = null;
-    isDraggingRef.current = false;
-    setDraggingId(null);
-    setDragPosition(null);
   }
 
   const toggleFilter = (filter: IdolFilter) => {
@@ -192,7 +127,6 @@ function App() {
     .filter(group => group.idols.length > 0);
 
   const selectedIdols = idols.filter(idol => selectedIds.includes(idol.id));
-  const draggingIdol = idols.find(idol => idol.id === draggingId);
   const allFiltersEnabled = activeFilters.length === idolFilters.length;
   const recommendedIdol = aiAnalysis?.recommendation_name
     ? idols.find(idol => aiAnalysis.recommendation_name.includes(idol.name) || idol.name.includes(aiAnalysis.recommendation_name))
@@ -246,10 +180,10 @@ function App() {
           ))}
         </div>
 
-        <div className={`selected-pool ${selectedIds.length > 0 ? 'has-items' : ''} ${draggingId ? 'drag-target' : ''}`} ref={selectedPoolRef}>
+        <div className={`selected-pool ${selectedIds.length > 0 ? 'has-items' : ''}`}>
           <div className="pool-items">
             {selectedIdols.length === 0 ? (
-              <span className="pool-empty">Drag idols here or tap a card</span>
+              <span className="pool-empty">Tap a card to select idols</span>
             ) : (
               selectedIdols.map(idol => (
                 <div className="pool-idol" key={idol.id}>
@@ -329,10 +263,7 @@ function App() {
                 <div 
                   key={idol.id} 
                   className={`idol-card ${selectedIds.includes(idol.id) ? 'selected' : ''}`}
-                  onPointerDown={(event) => handlePointerDown(idol.id, event)}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerCancel={handlePointerCancel}
+                  onClick={() => toggleSelect(idol.id)}
                 >
                   <img src={idol.image} alt={idol.name} className="idol-image" draggable={false} />
                   <div className="idol-info">
@@ -409,17 +340,6 @@ function App() {
         </div>
       )}
 
-      {draggingIdol && dragPosition && (
-        <div
-          className="drag-ghost"
-          style={{
-            left: dragPosition.x,
-            top: dragPosition.y,
-          }}
-        >
-          <img src={draggingIdol.image} alt="" />
-        </div>
-      )}
     </div>
   )
 }
