@@ -627,6 +627,11 @@ p.subtitle {
   box-shadow: none;
 }
 
+.result-profile-card .recommend-image-panel img {
+  object-position: bottom center;
+  padding: 0.35rem 0.35rem 0 0.35rem;
+}
+
 .result-profile-card h4 {
   padding: 0.8rem;
   font-size: 1.15rem;
@@ -879,12 +884,12 @@ p.subtitle {
   }
 
   .result-profile-card {
-    max-width: 150px;
+    max-width: 180px;
     margin: 0 auto;
   }
 
   .youtube-search-button {
-    max-width: 220px;
+    max-width: 180px;
     margin: 0 auto;
     padding: 0.6rem 1rem;
     font-size: 0.88rem;
