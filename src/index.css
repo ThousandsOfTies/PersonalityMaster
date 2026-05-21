@@ -590,15 +590,30 @@ p.subtitle {
 
 /* Results Layout Container */
 .result-layout-container {
-  display: grid;
-  grid-template-columns: 200px 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
-  align-items: start;
   margin-bottom: 2rem;
   margin-top: 1rem;
 }
 
-.result-left-column {
+.analysis-section-block {
+  width: 100%;
+}
+
+.recommendation-section-block {
+  width: 100%;
+}
+
+.recommendation-row-container {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 2rem;
+  align-items: start;
+  margin-top: 0.5rem;
+}
+
+.recommendation-left-column {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -673,10 +688,10 @@ p.subtitle {
   border-left: 8px solid white;
 }
 
-.result-right-column {
+.recommendation-right-column {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  width: 100%;
 }
 
 #result-title {
@@ -874,12 +889,16 @@ p.subtitle {
   }
 
   .result-layout-container {
-    grid-template-columns: 1fr;
     gap: 1.25rem;
     margin-bottom: 1.5rem;
   }
 
-  .result-left-column {
+  .recommendation-row-container {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .recommendation-left-column {
     gap: 0.75rem;
   }
 
