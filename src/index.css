@@ -691,6 +691,32 @@ p.subtitle {
   border-left: 8px solid white;
 }
 
+.youtube-search-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35em;
+  height: 1em;
+  margin-left: 0.24em;
+  vertical-align: -0.12em;
+  border-radius: 0.28em;
+  background: #ff0033;
+  text-decoration: none;
+}
+
+.youtube-search-link:hover {
+  filter: brightness(1.14);
+}
+
+.youtube-icon {
+  width: 0;
+  height: 0;
+  margin-left: 0.08em;
+  border-top: 0.28em solid transparent;
+  border-bottom: 0.28em solid transparent;
+  border-left: 0.44em solid white;
+}
+
 #result-title {
   background: var(--cute-grad);
   -webkit-background-clip: text;

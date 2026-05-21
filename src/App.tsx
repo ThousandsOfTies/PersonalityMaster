@@ -331,7 +331,20 @@ function App() {
                 </div>
 
                 <div className="recommendation-reason-box">
-                  <p>{recommendationReasonBody}</p>
+                  <p>
+                    {recommendationReasonBody}
+                    {youtubeSearchName && (
+                      <a
+                        className="youtube-search-link"
+                        href={youtubeSearchUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`${youtubeSearchName}をYouTubeで検索`}
+                      >
+                        <span className="youtube-icon" aria-hidden="true" />
+                      </a>
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
