@@ -303,39 +303,35 @@ function App() {
                   AI Recommendation
                 </h3>
 
-                <div className="recommendation-row-container">
-                  <div className="recommendation-left-column">
-                    <div className="result-profile-card">
-                      {recommendedIdol ? (
-                        <div className="recommend-image-panel">
-                          <img src={recommendedIdol.image} alt={recommendedIdol.name} />
-                        </div>
-                      ) : (
-                        <div className="recommend-image-panel fallback">
-                          <span>No Image</span>
-                        </div>
-                      )}
-                      <h4>{aiAnalysis?.recommendation_name}</h4>
-                    </div>
-                    {youtubeSearchName && (
-                      <a
-                        className="youtube-search-button"
-                        href={youtubeSearchUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={`${youtubeSearchName}をYouTubeで検索`}
-                      >
-                        <span className="youtube-play-icon" aria-hidden="true" />
-                        YouTubeで検索
-                      </a>
+                <div className="recommendation-profile-area">
+                  <div className="result-profile-card">
+                    {recommendedIdol ? (
+                      <div className="recommend-image-panel">
+                        <img src={recommendedIdol.image} alt={recommendedIdol.name} />
+                      </div>
+                    ) : (
+                      <div className="recommend-image-panel fallback">
+                        <span>No Image</span>
+                      </div>
                     )}
+                    <h4>{aiAnalysis?.recommendation_name}</h4>
                   </div>
+                  {youtubeSearchName && (
+                    <a
+                      className="youtube-search-button"
+                      href={youtubeSearchUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`${youtubeSearchName}をYouTubeで検索`}
+                    >
+                      <span className="youtube-play-icon" aria-hidden="true" />
+                      YouTubeで検索
+                    </a>
+                  )}
+                </div>
 
-                  <div className="recommendation-right-column">
-                    <div className="recommendation-reason-box">
-                      <p>{recommendationReasonBody}</p>
-                    </div>
-                  </div>
+                <div className="recommendation-reason-box">
+                  <p>{recommendationReasonBody}</p>
                 </div>
               </div>
             </div>
