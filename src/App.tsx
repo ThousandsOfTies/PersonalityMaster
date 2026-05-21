@@ -288,43 +288,49 @@ function App() {
             >
               ×
             </button>
-            <h2 id="result-title" style={{background: 'var(--cute-grad)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '1rem'}}>
-              AI Preference Analysis
-            </h2>
-            
-            <div style={{background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem', lineHeight: '1.6'}}>
-              <p>{aiAnalysis?.analysis}</p>
-            </div>
-            
-            <h3 style={{color: 'var(--passion-color)', marginBottom: '1rem'}}>AI Recommendation</h3>
-            <div className="recommendation-panel">
-              <div className="recommendation-profile">
-                {recommendedIdol ? (
-                  <div className="recommend-image-panel">
-                    <img src={recommendedIdol.image} alt={recommendedIdol.name} />
-                  </div>
-                ) : (
-                  <div className="recommend-image-panel fallback">
-                    <span>No Image</span>
-                  </div>
-                )}
-                <h4>{aiAnalysis?.recommendation_name}</h4>
-              </div>
-              <div className="recommendation-copy">
-                <p>
-                  {recommendationReasonBody}
-                  {youtubeSearchName && (
-                    <a
-                      className="youtube-search-link"
-                      href={youtubeSearchUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`${youtubeSearchName}をYouTubeで検索`}
-                    >
-                      <span className="youtube-icon" aria-hidden="true" />
-                    </a>
+            <div className="result-layout-container">
+              <div className="result-left-column">
+                <div className="result-profile-card">
+                  {recommendedIdol ? (
+                    <div className="recommend-image-panel">
+                      <img src={recommendedIdol.image} alt={recommendedIdol.name} />
+                    </div>
+                  ) : (
+                    <div className="recommend-image-panel fallback">
+                      <span>No Image</span>
+                    </div>
                   )}
-                </p>
+                  <h4>{aiAnalysis?.recommendation_name}</h4>
+                </div>
+                {youtubeSearchName && (
+                  <a
+                    className="youtube-search-button"
+                    href={youtubeSearchUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`${youtubeSearchName}をYouTubeで検索`}
+                  >
+                    <span className="youtube-play-icon" aria-hidden="true" />
+                    YouTubeで検索
+                  </a>
+                )}
+              </div>
+
+              <div className="result-right-column">
+                <h2 id="result-title">
+                  AI Preference Analysis
+                </h2>
+                
+                <div className="analysis-box">
+                  <p>{aiAnalysis?.analysis}</p>
+                </div>
+                
+                <h3 className="recommendation-title">
+                  AI Recommendation
+                </h3>
+                <div className="recommendation-reason-box">
+                  <p>{recommendationReasonBody}</p>
+                </div>
               </div>
             </div>
             
