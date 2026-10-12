@@ -54,3 +54,14 @@ Cloud Run の API プロキシは以下のエンドポイントを持ちます�
 - `POST /api/generate` with `{ prompt, model }`
 
 Gemini APIキーは Google Secret Manager に `GEMINI_API_KEY` として保存しています。
+
+APIの公開にはGoogle Cloud CLI 587.0.0以降が必要です。変更をcommit・pushした後に実行します。
+
+```bash
+npm run deploy:api
+```
+
+`cloudbuild.yaml` の `options.workerRelease: regular` でビルドし、成功したイメージのSHA256ダイジェストを既存の `personalitymaster-api`（プロジェクト `gen-lang-client-0345215684`、`asia-northeast1`）へ公開します。
+Docker BuildKitが対応しない `docker build --network cloudbuild` を生成する `gcloud run deploy --source` は使用しません。
+既存のシークレット・環境変数・認証設定は維持します。ビルド失敗時は公開しません。
+Cloud Runを変更せずにビルドだけ確認する場合は `npm run deploy:api -- --build-only` を実行します。
